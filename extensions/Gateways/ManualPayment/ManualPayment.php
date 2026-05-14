@@ -7,8 +7,8 @@ use App\Classes\Extension\Gateway;
 use App\Helpers\ExtensionHelper;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use Illuminate\Validation\Rule;
 
 #[ExtensionMeta(
     name: 'Manual Payment Gateway',
@@ -55,19 +55,21 @@ class ManualPayment extends Gateway
 
     public function pay(Invoice $invoice, $total)
     {
+        $availableMethods = collect([
+            'bkash' => $this->config('bkash_number'),
+            'nagad' => $this->config('nagad_number'),
+        ])->filter(fn ($number) => filled($number))->keys()->values();
+
         return view('gateways.manual-payment::pay', [
             'invoice' => $invoice,
             'bkashNumber' => $this->config('bkash_number'),
             'nagadNumber' => $this->config('nagad_number'),
+            'defaultMethod' => $availableMethods->first(),
         ]);
     }
 
     public function submit(Request $request, Invoice $invoice)
     {
-        if (Auth::id() !== $invoice->user_id) {
-            abort(403);
-        }
-
         if ($invoice->status !== 'pending') {
             return redirect()->route('invoices.show', $invoice)->with('notification', [
                 'type' => 'error',
@@ -81,17 +83,17 @@ class ManualPayment extends Gateway
         ])->filter(fn ($number) => filled($number))->keys()->values()->all();
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'string', 'in:' . implode(',', $enabledMethods)],
+            'payment_method' => ['required', 'string', Rule::in($enabledMethods)],
             'sender_number' => ['required', 'string', 'max:30'],
             'transaction_id' => ['required', 'string', 'max:100'],
         ]);
 
-        $reference = mb_substr(sprintf(
-            '%s | Sender: %s | TrxID: %s',
+        $reference = sprintf(
+            'TrxID: %s | Method: %s | Sender: %s',
+            $validated['transaction_id'],
             strtoupper($validated['payment_method']),
-            $validated['sender_number'],
-            $validated['transaction_id']
-        ), 0, 255);
+            $validated['sender_number']
+        );
 
         ExtensionHelper::addProcessingPayment(
             $invoice->id,

@@ -7,7 +7,7 @@
             <div class="space-y-2">
                 @if(filled($bkashNumber))
                     <label class="flex items-start gap-3 p-3 border border-neutral rounded-lg cursor-pointer">
-                        <input type="radio" name="payment_method" value="bkash" class="mt-1" {{ old('payment_method', 'bkash') === 'bkash' ? 'checked' : '' }}>
+                        <input type="radio" name="payment_method" value="bkash" class="mt-1" {{ old('payment_method', $defaultMethod) === 'bkash' ? 'checked' : '' }}>
                         <div>
                             <p class="font-medium">bKash</p>
                             <p class="text-sm text-base/60">Send money to: <span class="font-semibold">{{ $bkashNumber }}</span></p>
@@ -17,7 +17,7 @@
 
                 @if(filled($nagadNumber))
                     <label class="flex items-start gap-3 p-3 border border-neutral rounded-lg cursor-pointer">
-                        <input type="radio" name="payment_method" value="nagad" class="mt-1" {{ old('payment_method', !filled($bkashNumber) ? 'nagad' : '') === 'nagad' ? 'checked' : '' }}>
+                        <input type="radio" name="payment_method" value="nagad" class="mt-1" {{ old('payment_method', $defaultMethod) === 'nagad' ? 'checked' : '' }}>
                         <div>
                             <p class="font-medium">Nagad</p>
                             <p class="text-sm text-base/60">Send money to: <span class="font-semibold">{{ $nagadNumber }}</span></p>
